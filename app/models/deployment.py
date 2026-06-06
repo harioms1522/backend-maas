@@ -2,7 +2,7 @@ import enum
 import uuid
 
 from app.database import Base
-from sqlalchemy import Column, Enum, Integer, String
+from sqlalchemy import Column, Enum, Integer, String, Index
 
 class DeploymentStatus(enum.Enum):
     PROVISIONING = "provisioning"
@@ -25,3 +25,10 @@ class Deployment(Base):
 
     endpoint_url = Column(String, nullable=True)
     api_key = Column(String, nullable=True)
+
+    # indices
+    __table_args__ = (
+        Index("idx_status", "status"),
+        Index("idx_api_key", "api_key"),
+        Index("deployment_id", "endpoint_id", unique=True),
+    )
