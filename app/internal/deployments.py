@@ -43,13 +43,13 @@ async def delete_deployment_background_task(db: Session, deployment_id: str):
         await update_deployment_status(
             db, 
             deployment_id, 
-            DeploymentStatus.FAILED_DELETION
+            DeploymentStatus.FAILED_TERMINATION
         )
-        return {"deployment_id": deployment_id, "status": DeploymentStatus.FAILED_DELETION}
+        return {"deployment_id": deployment_id, "status": DeploymentStatus.FAILED_TERMINATION}
 
     # Simulate deployment deletion success
-    await update_deployment_status(db, deployment_id=deployment_id, status=DeploymentStatus.DELETED)
-    return {"deployment_id": deployment_id, "status": DeploymentStatus.DELETED}
+    await update_deployment_status(db, deployment_id=deployment_id, status=DeploymentStatus.TERMINATED)
+    return {"deployment_id": deployment_id, "status": DeploymentStatus.TERMINATED}
 
 async def create_deployment(db: Session, background_tasks: BackgroundTasks, model: str):
     deployment_id = str(uuid.uuid4())
@@ -83,7 +83,7 @@ async def delete_deployment(db: Session, background_tasks: BackgroundTasks, depl
     await update_deployment_status(
         db,
         deployment_id,
-        DeploymentStatus.DELETING
+        DeploymentStatus.TERMINATING
     )
 
     background_tasks.add_task(delete_deployment_background_task, db, deployment_id)

@@ -7,10 +7,10 @@ from sqlalchemy import Column, Enum, Integer, String
 class DeploymentStatus(enum.Enum):
     PROVISIONING = "provisioning"
     ACTIVE = "active"
-    DELETED = "deleted"
-    DELETING = "deleting"
+    TERMINATED = "terminated"
+    TERMINATING = "terminating"
     FAILED = "failed"
-    FAILED_DELETION = "failed_deletion"
+    FAILED_TERMINATION = "failed_termination"
 
 class Deployment(Base):
     __tablename__ = "deployments"

@@ -38,8 +38,8 @@ async def delete_deployment_handler(deployment_id: str, background_tasks: Backgr
     print(deployment)
     if not deployment:
         raise HTTPException(status_code=404, detail="Deployment not found")
-    if deployment["status"] in [DeploymentStatus.DELETED, DeploymentStatus.DELETING]:
-        raise HTTPException(status_code=400, detail="Deployment is already being deleted or has been deleted")
+    if deployment["status"] in [DeploymentStatus.TERMINATED, DeploymentStatus.TERMINATING]:
+        raise HTTPException(status_code=400, detail="Deployment is already being terminated or has been terminated")
     
     # Call the delete deployment function which will handle the deletion process
     await delete_deployment(db, background_tasks, deployment_id)
