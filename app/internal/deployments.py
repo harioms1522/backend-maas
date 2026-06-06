@@ -4,6 +4,7 @@ import secrets
 from sqlalchemy.orm import Session
 
 from app.crud.deployment import create_deployment as create_deployment_crud, update_deployment_status, get_deployment as get_deployment_crud
+from app.crud.usage import log_deployment_usage as log_deployment_usage_crud
 from app.models.deployment import DeploymentStatus
 
 from fastapi import BackgroundTasks
@@ -89,3 +90,17 @@ async def delete_deployment(db: Session, background_tasks: BackgroundTasks, depl
     background_tasks.add_task(delete_deployment_background_task, db, deployment_id)
     
     return {"message": f"Deployment {deployment_id} deletion initiated"}
+
+
+async def log_deployment_usage(db: Session, deployment_id: str, api_key: str, model: str, input_tokens: int, output_tokens: int):
+    # Placeholder for actual logging logic
+    await log_deployment_usage_crud(
+        db,
+        deployment_id=deployment_id,
+        api_key=api_key,
+        model=model,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens
+    )
+
+    return {"message": "Usage logged successfully"}

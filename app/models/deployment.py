@@ -2,7 +2,8 @@ import enum
 import uuid
 
 from app.database import Base
-from sqlalchemy import Column, Enum, Integer, String, Index
+from sqlalchemy import Column, DateTime, Enum, Integer, String, Index, ForeignKey
+from datetime import datetime
 
 class DeploymentStatus(enum.Enum):
     PROVISIONING = "provisioning"
@@ -31,4 +32,23 @@ class Deployment(Base):
         Index("idx_status", "status"),
         Index("idx_api_key", "api_key"),
         Index("idx_deployment_id", "deployment_id", unique=True),
+    )
+
+class DeploymentUsage(Base):
+    __tablename__ = "deployment_usage"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    deployment_id = Column(ForeignKey("deployments.deployment_id"), index=True, nullable=False)
+
+    api_key = Column(String, index=True)
+    model = Column(String, index=True)
+    input_tokens = Column(Integer, default=0)
+    output_tokens = Column(Integer, default=0)
+
+    timestamp = Column(DateTime, index=True, default=datetime.utcnow)
+    # indices
+    __table_args__ = (
+        Index("idx_usage_deployment_id", "deployment_id"),
+        Index("idx_usage_api_key", "api_key"),
     )

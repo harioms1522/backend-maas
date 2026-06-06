@@ -6,7 +6,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.internal.deployments import get_deployment as get_deployment_record
+from app.internal.deployments import get_deployment as get_deployment_record, log_deployment_usage
 from app.schemas.deployments import CompletionRequest, CompletionResponse
 
 router = APIRouter()
@@ -40,9 +40,19 @@ async def require_deployment_access(
 async def create_completion_handler(
     deployment_id: str,
     request: CompletionRequest,
+    db: Session = Depends(get_db),
     deployment: dict = Depends(require_deployment_access),
 ):
     input_tokens = round(len(request.prompt) / 4)
+
+    await log_deployment_usage(
+        db,
+        deployment_id=deployment["deployment_id"],
+        api_key=deployment["api_key"],
+        model=deployment["model"],
+        input_tokens=input_tokens,
+        output_tokens=random.randint(50, 200)
+    )
 
     return CompletionResponse(
         output="mocked response",
