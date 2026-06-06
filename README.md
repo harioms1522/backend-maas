@@ -57,3 +57,4 @@ curl http://127.0.0.1:8000/
       1. I am initiating a request to delete the resource 
       2. Which is terminated by a backend process in 9/10 times 
       3. for the 1/10 times in which resource is not terminated we can set a process to correct this (eg. cron etc.)
+2. Similarly in creating deployment process can fail, so we are marking those entries as failed so we can decide on those later

@@ -6,11 +6,11 @@ from sqlalchemy import Column, Enum, Integer, String, Index
 
 class DeploymentStatus(enum.Enum):
     PROVISIONING = "provisioning"
-    ACTIVE = "active"
-    TERMINATED = "terminated"
-    TERMINATING = "terminating"
     FAILED = "failed"
+    ACTIVE = "active"
+    TERMINATING = "terminating"
     FAILED_TERMINATION = "failed_termination"
+    TERMINATED = "terminated"
 
 class Deployment(Base):
     __tablename__ = "deployments"
