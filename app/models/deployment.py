@@ -8,7 +8,9 @@ class DeploymentStatus(enum.Enum):
     PROVISIONING = "provisioning"
     ACTIVE = "active"
     DELETED = "deleted"
+    DELETING = "deleting"
     FAILED = "failed"
+    FAILED_DELETION = "failed_deletion"
 
 class Deployment(Base):
     __tablename__ = "deployments"

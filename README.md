@@ -47,3 +47,13 @@ You can also verify the API endpoint with:
 ```bash
 curl http://127.0.0.1:8000/
 ```
+
+
+
+## Some Divergence from specs ()
+1. In specs for the DELETE request on endpoints --> We are supposed to mark it terminated directly 
+   1. But it can happen that the process which deletes the deployments failed and actual resource is not deleted but in metadata maintained we are marking it as terminated
+   2. I have corrected it with a simulation and asynchronous task in which 
+      1. I am initiating a request to delete the resource 
+      2. Which is deleted by a backend process in 9/10 times 
+      3. for the 1/10 times in which resource is not deleted we can set a process to correct this (eg. cron etc.)
