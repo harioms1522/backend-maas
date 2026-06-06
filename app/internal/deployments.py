@@ -3,7 +3,7 @@ import asyncio
 import secrets
 
 from sqlalchemy.orm import Session
-from app.crud.deployment import create_deployment as create_deployment_crud, update_deployment_status
+from app.crud.deployment import create_deployment as create_deployment_crud, update_deployment_status, get_deployment as get_deployment_crud
 # import for creating a unique deployment ID, e.g. uuid
 from app.schemas.deployments import DeploymentCreateRequest
 from app.models.deployment import DeploymentStatus
@@ -12,7 +12,7 @@ from fastapi import BackgroundTasks
 
 async def deployment_background_task(db: Session, deployment_id: str, model: str):
     # Simulate deployment creation time
-    await asyncio.sleep(10)
+    await asyncio.sleep(100)
 
     # generate random number to simulate success or failure
     # 1 fail out of 10
@@ -46,3 +46,19 @@ async def create_deployment(db: Session, background_tasks: BackgroundTasks, mode
 
     # 3. Return response safely to user immediately
     return {"deployment_id": deployment_id, "status": DeploymentStatus.PROVISIONING}
+
+
+async def get_deployment(db: Session, deployment_id: str):
+    print(f"Fetching deployment with ID: {deployment_id}")
+    deployment = await get_deployment_crud(db, deployment_id=deployment_id)
+    if not deployment:
+        return None
+    
+    return {
+        "deployment_id": deployment.deployment_id,
+        "model": deployment.model,
+        "status": deployment.status.value,
+        "endpoint_url": deployment.endpoint_url,
+        "api_key": deployment.api_key
+    }
+    

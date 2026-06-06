@@ -3,7 +3,7 @@ from app.database import get_db
 from sqlalchemy.orm import Session
 
 from app.schemas.deployments import DeploymentCreateRequest
-from app.internal.deployments import create_deployment
+from app.internal.deployments import create_deployment, get_deployment
 
 router = APIRouter(
     prefix="/deployments",
@@ -11,12 +11,13 @@ router = APIRouter(
 
 
 @router.get("/:deployment_id")
-async def get_deployment(deployment_id: str, db: Session = Depends(get_db)):
+async def get_deployment_handler(deployment_id: str, db: Session = Depends(get_db)):
     # Placeholder for actual deployment retrieval logic
-    if deployment_id != "valid_id":
+    deployment = await get_deployment(db, deployment_id)
+    if not deployment:
         raise HTTPException(status_code=404, detail="Deployment not found")
-    return {"endpoint_url": deployment_id, "api_key": "active"}
-
+    
+    return deployment
 
 @router.delete("/:deployment_id")
 async def delete_deployment(deployment_id: str, db: Session = Depends(get_db)):

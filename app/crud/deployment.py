@@ -32,3 +32,11 @@ async def update_deployment_status(db: Session, deployment_id: uuid.UUID, status
         db.refresh(deployment)
         return deployment
     return None
+
+
+async def get_deployment(db: Session, deployment_id: uuid.UUID):
+    # Placeholder for actual deployment retrieval logic
+    deployment = db.query(Deployment).filter(Deployment.deployment_id == deployment_id).first()
+    if deployment:
+        return deployment
+    return None
