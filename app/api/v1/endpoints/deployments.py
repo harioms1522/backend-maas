@@ -1,19 +1,46 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from app.database import get_db
+import random
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.schemas.deployments import DeploymentCreateRequest
-from app.internal.deployments import create_deployment, get_deployment, delete_deployment
-from app.models.deployment import DeploymentStatus
+from app.database import get_db
+from app.internal.deployments import get_deployment as get_deployment_record
+from app.schemas.deployments import CompletionRequest, CompletionResponse
 
 router = APIRouter()
 
 
-@router.post("/:deployment_id/completions", status_code=201)
-async def create_deployment_handler(
-    deployment_data: DeploymentCreateRequest, 
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+async def require_deployment_access(
+    deployment_id: str,
+    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
+    db: Session = Depends(get_db),
 ):
-    model = deployment_data.model
-    return await create_deployment(db, background_tasks, model=model)
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid Authorization header")
+
+    api_key = authorization.split(" ", 1)[1].strip()
+    deployment = await get_deployment_record(db, deployment_id)
+
+    if not deployment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deployment not found")
+
+    if deployment["api_key"] != api_key:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+
+    return deployment
+
+
+@router.post("/{deployment_id}/completions", status_code=200)
+async def create_completion_handler(
+    deployment_id: str,
+    request: CompletionRequest,
+    deployment: dict = Depends(require_deployment_access),
+):
+    input_tokens = round(len(request.prompt) / 4)
+
+    return CompletionResponse(
+        output="mocked response",
+        input_tokens=input_tokens,
+        output_tokens=random.randint(50, 200),
+    )
