@@ -19,11 +19,15 @@ async def create_deployment(db: Session, deployment_id: uuid.UUID, model: str):
     db.refresh(new_deployment)
     return new_deployment
 
-async def update_deployment_status(db: Session, deployment_id: uuid.UUID, status: str):
+async def update_deployment_status(db: Session, deployment_id: uuid.UUID, status: str, endpoint_url: str = None, api_key: str = None):
     # Placeholder for actual deployment status update logic
     deployment = db.query(Deployment).filter(Deployment.deployment_id == deployment_id).first()
     if deployment:
         deployment.status = status
+        if endpoint_url is not None:
+            deployment.endpoint_url = endpoint_url
+        if api_key is not None:
+            deployment.api_key = api_key
         db.commit()
         db.refresh(deployment)
         return deployment
