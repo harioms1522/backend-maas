@@ -7,6 +7,7 @@ from datetime import datetime
 
 class DeploymentStatus(enum.Enum):
     PROVISIONING = "provisioning"
+    READY = "ready"
     FAILED = "failed"
     ACTIVE = "active"
     TERMINATING = "terminating"

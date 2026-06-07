@@ -29,11 +29,11 @@ async def deployment_background_task(db: Session, deployment_id: str, model: str
     await update_deployment_status(
         db, 
         deployment_id, 
-        DeploymentStatus.ACTIVE,
+        DeploymentStatus.READY,
         endpoint_url=f"https://{deployment_id}.maas.model",
         api_key = secrets.token_hex(32)  
     )
-    return {"deployment_id": deployment_id, "status": DeploymentStatus.ACTIVE}
+    return {"deployment_id": deployment_id, "status": DeploymentStatus.READY}
 
 async def delete_deployment_background_task(db: Session, deployment_id: str):
     # Simulate deployment deletion time
