@@ -29,8 +29,8 @@ async def require_deployment_access(
     if deployment["api_key"] != api_key:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid API key")
     
-    if deployment["status"] != "active":
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Deployment is not active")
+    if deployment["status"] not in {"ready", "active"}:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Deployment is not ready")
 
 
     return deployment

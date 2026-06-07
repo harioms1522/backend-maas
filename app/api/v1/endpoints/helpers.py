@@ -7,9 +7,14 @@ security = HTTPBearer()
 
 async def get_api_key(token: Annotated[HTTPAuthorizationCredentials, Depends(security)]) -> str:
     """Extracts the raw API key from the Authorization Bearer header."""
-    authorization = token.credentials
-    if not authorization or not authorization.startswith("Bearer "):
+    authorization = token.credentials if token else None
+    if not authorization:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid Authorization header")
-    
-    api_key = authorization.split(" ", 1)[1].strip()
-    return api_key
+
+    if authorization.startswith("Bearer "):
+        authorization = authorization.split(" ", 1)[1].strip()
+
+    if not authorization:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing or invalid Authorization header")
+
+    return authorization

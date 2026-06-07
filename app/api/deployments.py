@@ -11,7 +11,7 @@ router = APIRouter(
 )
 
 
-@router.get("/:deployment_id")
+@router.get("/{deployment_id}")
 async def get_deployment_handler(deployment_id: str, db: Session = Depends(get_db)):
     # Placeholder for actual deployment retrieval logic
     deployment = await get_deployment(db, deployment_id)
@@ -31,7 +31,7 @@ async def create_deployment_handler(
     return await create_deployment(db, background_tasks, model=model)
 
 
-@router.delete("/:deployment_id")
+@router.delete("/{deployment_id}")
 async def delete_deployment_handler(deployment_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     # Placeholder for actual deployment deletion logic
     deployment = await get_deployment(db, deployment_id)
