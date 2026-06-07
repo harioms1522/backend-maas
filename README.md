@@ -116,4 +116,4 @@ Why I use an ORM:
 1. Basic project structure setup like routing, env_vars etc.
 2. Brainstorming and reson about certain decisions
    1. choosing an in memory rate limiter over redis usage (for which I would have used a docker compose file to setup everything in one go, It would also go out of the scope of requirement)
-3. paraphrasing this document itself ;)
+3. paraphrasing certain parts of this document itself ;)
