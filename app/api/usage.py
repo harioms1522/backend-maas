@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from app.crud.usage import get_deployment_usage
 from app.database import get_db
-from app.models.deployment import DeploymentUsage
 
 router = APIRouter(
     prefix="/usage",
@@ -45,7 +44,7 @@ async def get_usage(
         raise HTTPException(status_code=400, detail="'from' must be before or equal to 'to'")
 
     usage_rows = await get_deployment_usage(db, api_key=api_key, start=start, end=end)
-    
+
     grouped = defaultdict(lambda: {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "estimated_cost": 0.0})
 
     for row in usage_rows:
