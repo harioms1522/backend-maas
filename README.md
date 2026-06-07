@@ -56,6 +56,20 @@ You can also verify the API endpoint with:
 curl http://127.0.0.1:8000/
 ```
 
+## Running tests
+
+Use pytest to validate the deployment lifecycle and security behavior:
+
+```bash
+python -m pytest -q
+```
+
+Current test coverage includes a state-machine and authorization case for:
+- provisioning -> ready -> terminated lifecycle enforcement
+- 401 Unauthorized on missing/malformed auth
+- 403 Forbidden on wrong API key ownership
+- 409 Conflict for invalid or terminated deployment states
+
 ## Data Model
 
 There are two tables:
