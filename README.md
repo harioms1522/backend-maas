@@ -49,6 +49,10 @@ curl http://127.0.0.1:8000/
 ```
 
 
+## If time permitted, would have used,
+1. celery for background tasks
+2. redis for count persistance for throttling of completions api 
+
 
 ## Some Divergence from specs ()
 1. In specs for the DELETE request on endpoints --> We are supposed to mark it terminated directly 

@@ -29,9 +29,13 @@ async def require_deployment_access(
 
     if not deployment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deployment not found")
-
+    
     if deployment["api_key"] != api_key:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid API key")
+    
+    if deployment["status"] != "active":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Deployment is not active")
+
 
     return deployment
 
@@ -44,6 +48,7 @@ async def create_completion_handler(
     deployment: dict = Depends(require_deployment_access),
 ):
     input_tokens = round(len(request.prompt) / 4)
+    output_tokens = random.randint(50, 200)  # Simulate output token count
 
     await log_deployment_usage(
         db,
@@ -51,11 +56,11 @@ async def create_completion_handler(
         api_key=deployment["api_key"],
         model=deployment["model"],
         input_tokens=input_tokens,
-        output_tokens=random.randint(50, 200)
+        output_tokens=output_tokens
     )
 
     return CompletionResponse(
         output="mocked response",
         input_tokens=input_tokens,
-        output_tokens=random.randint(50, 200),
+        output_tokens=output_tokens
     )
