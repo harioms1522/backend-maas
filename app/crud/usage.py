@@ -1,7 +1,8 @@
-from app.models.deployment import DeploymentUsage
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from datetime import datetime, timezone
 from typing import  List
+from app.models.deployment import DeploymentUsage
 
 
 async def log_deployment_usage(db: Session, deployment_id: str, api_key: str, model: str, input_tokens: int, output_tokens: int):
@@ -13,7 +14,9 @@ async def log_deployment_usage(db: Session, deployment_id: str, api_key: str, mo
         output_tokens=output_tokens
     )
     db.add(usage_entry)
-    db.commit()
+    await db.commit()
+    await db.refresh(usage_entry)
+    return usage_entry
 
 async def get_deployment_usage(
         db: Session, 
@@ -21,11 +24,18 @@ async def get_deployment_usage(
         start: datetime, 
         end: datetime
     ) -> List[DeploymentUsage]:
-    usage_rows = (
-        db.query(DeploymentUsage)
-        .filter(DeploymentUsage.api_key == api_key)
-        .filter(DeploymentUsage.timestamp >= start)
-        .filter(DeploymentUsage.timestamp <= end)
-        .all()
+    # usage_rows = (
+    #     db.query(DeploymentUsage)
+    #     .filter(DeploymentUsage.api_key == api_key)
+    #     .filter(DeploymentUsage.timestamp >= start)
+    #     .filter(DeploymentUsage.timestamp <= end)
+    #     .all()
+    # )
+    stmt = select(DeploymentUsage).where(
+        DeploymentUsage.api_key == api_key,
+        DeploymentUsage.timestamp >= start,
+        DeploymentUsage.timestamp <= end
     )
+    result = await db.execute(stmt)
+    usage_rows = result.scalars().all()
     return usage_rows

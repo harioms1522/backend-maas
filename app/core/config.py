@@ -9,4 +9,4 @@ load_dotenv()
 ENV = os.getenv("ENV", "DEVELOPMENT")
 
 # database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./test.db")

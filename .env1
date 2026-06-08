@@ -1,0 +1,2 @@
+ENV=DEVELOPMENT
+DATABASE_URL=sqlite+aiosqlite:///./test.db
