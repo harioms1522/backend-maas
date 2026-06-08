@@ -1,53 +1,62 @@
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from httpx import AsyncClient, ASGITransport  # Fixed import here
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import select, update
 
 from app.app import app
 from app.database import Base, get_db
 from app.models.deployment import Deployment, DeploymentStatus
 
+# Tell pytest to handle async tests using anyio (or pytest-asyncio)
+pytestmark = pytest.mark.anyio
+
 
 @pytest.fixture()
-def client_and_db(tmp_path, monkeypatch):
+async def client_and_db(tmp_path, monkeypatch):
     db_path = tmp_path / "test_state_machine.db"
-    database_url = f"sqlite:///{db_path}"
-    engine = create_engine(database_url, connect_args={"check_same_thread": False})
-    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    database_url = f"sqlite+aiosqlite:///{db_path}"
 
-    Base.metadata.create_all(bind=engine)
+    engine = create_async_engine(database_url, connect_args={"check_same_thread": False})
+    TestingSessionLocal = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+    
+    # Fixed: Added 'async with' instead of regular 'with'
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
     async def fake_deployment_background_task(*args, **kwargs):
         return None
 
-    async def fake_delete_background_task(db, deployment_id):
-        db.query(Deployment).filter(Deployment.deployment_id == deployment_id).update(
-            {"status": DeploymentStatus.TERMINATED}
+    async def fake_delete_background_task(db: AsyncSession, deployment_id):
+        await db.execute(
+            update(Deployment)
+            .where(Deployment.deployment_id == deployment_id)
+            .values(status=DeploymentStatus.TERMINATED)
         )
-        db.commit()
+        await db.commit()
         return {"deployment_id": deployment_id, "status": DeploymentStatus.TERMINATED}
 
     monkeypatch.setattr("app.internal.deployments.deployment_background_task", fake_deployment_background_task)
     monkeypatch.setattr("app.internal.deployments.delete_deployment_background_task", fake_delete_background_task)
 
-    def override_get_db():
-        db = TestingSessionLocal()
-        try:
+    async def override_get_db():
+        async with TestingSessionLocal() as db:
             yield db
-        finally:
-            db.close()
 
     app.dependency_overrides[get_db] = override_get_db
 
-    with TestClient(app) as test_client:
+    # Fixed: Using the standard ASGITransport provided by httpx
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as test_client:
         yield test_client, TestingSessionLocal
 
     app.dependency_overrides.clear()
+    await engine.dispose()
 
 
-def test_state_machine_enforcement_and_security_boundaries(client_and_db):
+async def test_state_machine_enforcement_and_security_boundaries(client_and_db):
     client, session_factory = client_and_db
-    create_response = client.post("/deployments/", json={"model": "gpt-4o-mini"})
+    
+    create_response = await client.post("/deployments/", json={"model": "gpt-4o-mini"})
 
     assert create_response.status_code == 201
     assert create_response.json()["status"] == "provisioning"
@@ -56,49 +65,43 @@ def test_state_machine_enforcement_and_security_boundaries(client_and_db):
 
     deployment_id = create_response.json()["deployment_id"]
 
-    # The deployment is still provisioning at this point, so completions must be blocked.
-    db = session_factory()
-    try:
-        deployment = db.query(Deployment).filter(Deployment.deployment_id == deployment_id).one()
+    async with session_factory() as db:
+        result = await db.execute(select(Deployment).filter(Deployment.deployment_id == deployment_id))
+        deployment = result.scalar_one()
         deployment.api_key = "owner-api-key"
         deployment.endpoint_url = "https://example.test"
-        db.commit()
-        db.refresh(deployment)
-    finally:
-        db.close()
+        await db.commit()
 
-    provisioning_response = client.post(
+    provisioning_response = await client.post(
         f"/v1/{deployment_id}/completions",
         json={"prompt": "hello"},
         headers={"Authorization": "Bearer owner-api-key"},
     )
     assert provisioning_response.status_code == 409
 
-    db = session_factory()
-    try:
-        deployment = db.query(Deployment).filter(Deployment.deployment_id == deployment_id).one()
+    async with session_factory() as db:
+        result = await db.execute(select(Deployment).filter(Deployment.deployment_id == deployment_id))
+        deployment = result.scalar_one()
         deployment.status = DeploymentStatus.READY
-        db.commit()
-    finally:
-        db.close()
+        await db.commit()
 
-    missing_auth_response = client.post(
+    missing_auth_response = await client.post(
         f"/v1/{deployment_id}/completions",
         json={"prompt": "hello"},
     )
     assert missing_auth_response.status_code == 401
 
-    other_key_response = client.post(
+    other_key_response = await client.post(
         f"/v1/{deployment_id}/completions",
         json={"prompt": "hello"},
         headers={"Authorization": "Bearer other-api-key"},
     )
     assert other_key_response.status_code == 403
 
-    delete_response = client.delete(f"/deployments/{deployment_id}")
+    delete_response = await client.delete(f"/deployments/{deployment_id}")
     assert delete_response.status_code == 200
 
-    terminated_response = client.post(
+    terminated_response = await client.post(
         f"/v1/{deployment_id}/completions",
         json={"prompt": "hello"},
         headers={"Authorization": "Bearer owner-api-key"},
